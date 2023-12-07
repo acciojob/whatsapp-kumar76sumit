@@ -69,9 +69,7 @@ public class WhatsappRepository {
     @PostMapping("/add-message")
     public int createMessage(String content){
         messageId++;
-        Date date = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy");
-        Message message=new Message(messageId,content,date);
+        Message message=new Message(messageId,content,new Date());
         return messageId;
     }
 
