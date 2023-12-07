@@ -1,5 +1,6 @@
 package com.driver;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -68,7 +69,9 @@ public class WhatsappRepository {
     @PostMapping("/add-message")
     public int createMessage(String content){
         messageId++;
-        Message message=new Message(messageId,content,LocalDateTime.now());
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy");
+        Message message=new Message(messageId,content,date);
         return messageId;
     }
 
