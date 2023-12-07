@@ -3,6 +3,7 @@ package com.driver;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.ToIntFunction;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -103,10 +104,6 @@ public class WhatsappRepository {
     }
     @PutMapping("/change-admin")
     public String changeAdmin(User approver, User user, Group group) throws Exception{
-        //Throw "Group does not exist" if the mentioned group does not exist
-        //Throw "Approver does not have rights" if the approver is not the current admin of the group
-        //Throw "User is not a participant" if the user is not a part of the group
-        //Change the admin of the group to "user" and return "SUCCESS". Note that at one time there is only one admin and the admin rights are transferred from approver to user.
         if(!groupUserMap.containsKey(group))
         {
             throw new Exception("Group does not exist");
@@ -135,11 +132,62 @@ public class WhatsappRepository {
 
     @DeleteMapping("/remove-user")
     public int removeUser(User user) throws Exception{
-        return 1;
+        Group group1=null;
+        for(Group group:groupUserMap.keySet())
+        {
+            for(int i=0;i<groupUserMap.get(group).size();i++)
+            {
+                User user1=groupUserMap.get(group).get(i);
+                if(user1==user)
+                {
+                    group1=group;
+                }
+            }
+        }
+        if(group1==null)
+        {
+            throw new Exception("User not found");
+        }
+        if(adminMap.get(group1)==user)
+        {
+            throw new Exception("Cannot remove admin");
+        }
+        groupUserMap.get(group1).remove(user);
+        group1.setNumberOfParticipants(group1.getNumberOfParticipants()-1);
+        for(Message message:senderMap.keySet())
+        {
+            if(senderMap.get(message)==user)
+            {
+                senderMap.remove(user);
+                groupMessageMap.get(group1).remove(message);
+                messageId--;
+            }
+        }
+        return groupUserMap.get(group1).size()+groupMessageMap.get(group1).size()+messageId;
     }
 
     @GetMapping("/find-messages")
     public String findMessage(Date start, Date end, int K) throws Exception{
-        return "";
+        //This is a bonus problem and does not contains any marks
+        // Find the Kth latest message between start and end (excluding start and end)
+        // If the number of messages between given time is less than K, throw "K is greater than the number of messages" exception
+        List<Message> kthLatestMessage=new ArrayList<>();
+        for(Message message:senderMap.keySet())
+        {
+            Date date=message.getTimestamp();
+            if(date.after(start) && date.before(end))
+            {
+                kthLatestMessage.add(message);
+            }
+        }
+        Collections.sort(kthLatestMessage,(a,b)->
+        {
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
+        if(kthLatestMessage.size()<K)
+        {
+            throw new Exception("K is greater than the number of messages");
+        }
+        return kthLatestMessage.get(K).getContent();
     }
 }
